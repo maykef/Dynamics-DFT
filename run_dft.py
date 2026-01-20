@@ -5,11 +5,16 @@ Run DFT calculations for all electron configurations.
 Reads data/configs.json and runs PySCF calculations in parallel.
 Saves results to data/results.json.
 
+Usage:
+    python run_dft.py              # Full run (~10 hours)
+    python run_dft.py --test       # Test mode (5 configs, ~30 seconds)
+
 Expected runtime: ~10 hours on Threadripper 7970X (32 cores).
 """
 
 import json
 import time
+import sys
 from pathlib import Path
 from datetime import timedelta
 import numpy as np
@@ -155,8 +160,15 @@ def estimate_total_time(sample_runtimes, total_configs, n_jobs):
 
 def main():
     """Main execution."""
+    # Check for test mode
+    test_mode = '--test' in sys.argv
+    
     print("=" * 70)
-    print("DFT CALCULATION ENGINE")
+    if test_mode:
+        print("DFT CALCULATION ENGINE - TEST MODE")
+        print("(Running only 5 configurations to verify setup)")
+    else:
+        print("DFT CALCULATION ENGINE - FULL RUN")
     print("=" * 70)
     
     # Load configurations
@@ -167,9 +179,15 @@ def main():
         exit(1)
     
     with open(config_file, 'r') as f:
-        configs = json.load(f)
+        all_configs = json.load(f)
     
-    print(f"\nLoaded {len(configs)} configurations from {config_file}")
+    # Test mode: just run first 5 configs
+    if test_mode:
+        configs = all_configs[:5]
+        print(f"\nTest mode: Running {len(configs)} of {len(all_configs)} total configurations")
+    else:
+        configs = all_configs
+        print(f"\nLoaded {len(configs)} configurations from {config_file}")
     print(f"\nDFT Settings:")
     print(f"  Functional: {DFT_FUNCTIONAL}")
     print(f"  Basis set: {BASIS_SET}")
@@ -204,18 +222,23 @@ def main():
         print(f"\nEstimated total runtime: {estimated_time}")
         print(f"  (Based on {len(test_times)} successful test calculations)")
     
-    # Confirm before proceeding
-    print("\n" + "=" * 70)
-    response = input("Proceed with full calculation? [y/N]: ")
-    if response.lower() != 'y':
-        print("Aborted.")
-        exit(0)
+    # Confirm before proceeding (skip in test mode)
+    if not test_mode:
+        print("\n" + "=" * 70)
+        response = input("Proceed with full calculation? [y/N]: ")
+        if response.lower() != 'y':
+            print("Aborted.")
+            exit(0)
     
     print("\n" + "=" * 70)
-    print("STARTING FULL DFT CALCULATIONS")
+    if test_mode:
+        print("RUNNING TEST CALCULATIONS")
+    else:
+        print("STARTING FULL DFT CALCULATIONS")
     print("=" * 70)
-    print("This will take a while. Progress bar shows completed calculations.")
-    print("You can safely interrupt (Ctrl+C) and resume later (not implemented yet).")
+    if not test_mode:
+        print("This will take a while. Progress bar shows completed calculations.")
+        print("You can safely interrupt (Ctrl+C) and resume later (not implemented yet).")
     print()
     
     start_time = time.time()
@@ -229,7 +252,11 @@ def main():
     total_time = time.time() - start_time
     
     # Save results
-    output_file = Path('data/results.json')
+    if test_mode:
+        output_file = Path('data/results_test.json')
+    else:
+        output_file = Path('data/results.json')
+    
     with open(output_file, 'w') as f:
         json.dump(results, f, indent=2)
     
@@ -272,7 +299,15 @@ def main():
             print(f"  {r['symbol']:>2} (Z={Z:>2}): {r['energy']:>12.6f} Ha  ({r['config_string']})")
     
     print("\n" + "=" * 70)
-    print("Next step: python analyze.py")
+    if test_mode:
+        print("✓ TEST COMPLETE - Everything works!")
+        print("=" * 70)
+        print("\nTo run full calculation:")
+        print("  python run_dft.py")
+        print("\nTo analyze test results:")
+        print("  python analyze.py --test")
+    else:
+        print("Next step: python analyze.py")
     print("=" * 70)
 
 
