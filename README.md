@@ -38,15 +38,26 @@ mkdir -p data/figures
 
 ## Usage
 
+**Quick Test (30 seconds):**
+```bash
+python generate_configs.py       # Generate configs
+python run_dft.py --test         # Test with 5 calculations only
+# Verifies PySCF is working correctly
+```
+
+**Full Run (10 hours):**
 ```bash
 # Step 1: Generate electron configurations (~10 per element, Z=1-10)
 python generate_configs.py
 # Output: data/configs.json
 
-# Step 2: Run DFT calculations (parallelized across 32 cores)
+# Step 2: Run DFT calculations (auto-detects all cores)
 python run_dft.py
 # Output: data/results.json
-# Time: ~10 hours on Threadripper 7970X
+# Time: ~10 hours on Threadripper 7970X (32 cores)
+
+# Optional: Control number of cores
+N_CORES=16 python run_dft.py  # Use only 16 cores
 
 # Step 3: Analyze phase space and generate plots
 python analyze.py
