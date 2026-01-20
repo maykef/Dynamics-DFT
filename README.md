@@ -23,6 +23,12 @@ Instead of just memorizing "noble gases are stable," we model electron configura
 mamba create -n electron-dft python=3.11 -y
 mamba activate electron-dft
 
+# or
+
+# Create and activate environment from file
+mamba env create -f environment.yml
+mamba activate electron-dft
+
 # Install dependencies
 pip install -r requirements.txt
 
